@@ -3,32 +3,24 @@
  * 
  */
 
-import React, { Component } from 'react';
-import {
-	StyleSheet,
-	View,
-	Text,
-	Image,
+import React, { Component } from 'react'
+import
+{
 	PanResponder,
 	Animated,
-	Dimensions,
-	TouchableOpacity
-} from 'react-native';
+}
+from 'react-native'
 
 
 export default class Draggable extends Component
 {
 	static propTypes = {
-		renderSize:React.PropTypes.number,
-		imageSource:React.PropTypes.number,
-		offsetX:React.PropTypes.number,
-		offsetY:React.PropTypes.number,
-		reverse:React.PropTypes.bool,
-		pressDrag:React.PropTypes.func,
-		pressDragRelease:React.PropTypes.func,
-		longPressDrag:React.PropTypes.func,
-		pressInDrag:React.PropTypes.func,
-		pressOutDrag:React.PropTypes.func
+		pressDragRelease: React.PropTypes.func,
+		reverse: React.PropTypes.bool,
+		lockX: React.PropTypes.bool,
+		lockY: React.PropTypes.bool,
+		positionX: React.PropTypes.number,
+		positionY: React.PropTypes.number,
 	}
 
 	componentWillMount()
@@ -49,35 +41,24 @@ export default class Draggable extends Component
 
 	constructor(props)
 	{
-		super(props);
+		super(props)
 		const {
-			pressDrag,
 			pressDragRelease,
-			longPressDrag,
-			pressInDrag,
-			pressOutDrag,
-			imageSource,
-			renderText,
-			renderShape,
-			renderSize,
-			renderColor,
-			offsetX,
-			offsetY,
-			reverse
+			reverse,
+			lockX,
+			lockY,
+			positionX,
+			positionY
 		} = props
-		this.pressDrag = pressDrag;
-		this.pressInDrag = pressInDrag;
-		this.pressOutDrag = pressOutDrag;
-		this.longPressDrag = longPressDrag;
-		this.renderSize = renderSize ? renderSize : 36;
-		this.imageSource = imageSource;
-		this.offsetX = offsetX!=null ? offsetX : 100;
-		this.offsetY = offsetY!=null ? offsetY : 100;
-		this.reverse = reverse!=null ? reverse : true;
+		this.reverse = reverse!=null ? reverse : false
+		this.lockX = lockX==null ? false : lockX
+		this.lockY = lockY==null ? false : lockY
+		this.positionX = positionX==null ? 0 : positionX
+		this.positionY = positionY==null ? 0 : positionY
 		this.state = {
-			pan:new Animated.ValueXY(), 
-			_value:{x: 0, y: 0}
-		};
+			pan: new Animated.ValueXY({x: this.positionX, y: this.positionY}),
+			_value: {x: this.positionX, y: this.positionY}
+		}
 
 		this.panResponder = PanResponder.create({    
 			onMoveShouldSetPanResponder: (evt, gestureState) => true,
@@ -85,8 +66,6 @@ export default class Draggable extends Component
 			onPanResponderGrant: (e, gestureState) => {
 				if(this.reverse == false)
 				{
-					console.log('x: ' + this.state._value.x)
-					console.log('y: ' + this.state._value.y)
 					this.state.pan.setOffset({
 						x: this.state._value.x,
 						y: this.state._value.y
@@ -94,79 +73,50 @@ export default class Draggable extends Component
 					this.state.pan.setValue({x: 0, y: 0})
 				}
 			},
-			onPanResponderMove: Animated.event([null,{ 
-				//dx:this.state.pan.x,
-				dy:this.state.pan.y
-			}]),
+			onPanResponderMove: (e, gestureState) => {
+				let x = this.state.pan.x
+				let y = this.state.pan.y
+				if (this.lockX)
+					x = 0
+				if (this.lockY)
+					y = 0
+
+				Animated.event([null, {
+					dx: x,
+					dy: y,
+				}])(e, gestureState)
+			},
 			onPanResponderRelease: (e, gestureState) => {
-				console.log('onPanResponderRelease')
-				console.log(e.nativeEvent)
 				if(pressDragRelease)
 				{
-					console.log('pressDragRelease')
-					pressDragRelease();
+					pressDragRelease(e)
 				}
 				if(this.reverse == false)
 				{
-					console.log('release')
-					console.log('x: ' + this.state._value.x)
-					console.log('y: ' + this.state._value.y)
-					this.state.pan.flattenOffset();
+					this.state.pan.flattenOffset()
 				}
 				else {
 
 					Animated.spring(            
 						this.state.pan,         
 						{toValue:{x:0,y:0}}     
-					).start();
+					).start()
 				}
-			} 
-		});
-	}
-
-	_positionCss(x,y)
-	{
-		let Window = Dimensions.get('window');
-		return {
-			zIndex:999,
-			position: 'absolute',
-			top: Window.height/2,
-			//left: Window.width/2 - size+x,
-		}
+			}
+		})
 	}
 
 	render()
 	{
 		return (
-			<View
-				style={
-					this._positionCss(
-						this.offsetX,
-						this.offsetY
-					)
-				}>
-				<Animated.View 
-					{...this.panResponder.panHandlers}
-					style={[
-						{flex: 1},
-						this.state.pan.getLayout(),
-					]}>
-					<TouchableOpacity 
-						style={{
-							flex: 1,
-						}}
-						onPress={this.pressDrag}
-						onLongPress={this.longPressDrag}
-						onPressIn={this.pressInDrag}
-						onPressOut={this.pressOutDrag}
-					>
-						{this.props.children}
-						{/*{touchableContent}*/}
-					</TouchableOpacity>
-				</Animated.View>
-			</View>
+			<Animated.View 
+				{...this.panResponder.panHandlers}
+				style={[
+					this.props.style,
+					this.state.pan.getLayout(),
+				]}>
+					{this.props.children}
+			</Animated.View>
 		)
 	}
 }
-
-
