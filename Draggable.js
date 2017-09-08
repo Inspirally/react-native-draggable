@@ -60,7 +60,10 @@ export default class Draggable extends Component
 			_value: {x: this.positionX, y: this.positionY}
 		}
 
-		this.panResponder = PanResponder.create({    
+		this.panResponder = PanResponder.create({
+			onPanResponderTerminationRequest: (evt, state) => false,
+			onStartShouldSetPanResponder: (evt, state) => true,
+			onStartShouldSetPanResponderCapture: (evt, state) => true,
 			onMoveShouldSetPanResponder: (evt, gestureState) => true,
 			onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
 			onPanResponderGrant: (e, gestureState) => {
@@ -97,9 +100,9 @@ export default class Draggable extends Component
 				}
 				else {
 
-					Animated.spring(            
-						this.state.pan,         
-						{toValue:{x:0,y:0}}     
+					Animated.spring(
+						this.state.pan,
+						{toValue:{x:0,y:0}}
 					).start()
 				}
 			}
@@ -109,7 +112,8 @@ export default class Draggable extends Component
 	render()
 	{
 		return (
-			<Animated.View 
+			<Animated.View
+				onLayout={this.props.onLayout}
 				{...this.panResponder.panHandlers}
 				style={[
 					this.props.style,
